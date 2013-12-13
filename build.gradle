@@ -1,0 +1,108 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+defaultTasks 'build'
+
+/* Set the generate Jar's file name */
+jar.baseName = 'elster-security'
+
+ext {
+
+	
+	log4j_group = "log4j"
+	log4j_name = "log4j"
+	log4j_revision = "1.2.16"
+	
+	guava_group = "com.google.guava"
+	guava_name = "guava"
+	guava_revision = "13.0.1"
+	
+
+}
+
+jar {
+	manifest {
+		attributes 'Main-Class': 'com.elster.security.prefs.PrefConfigurator'
+	}
+	metaInf {
+		 from 'src/main/META-INF'
+	}
+	
+	exclude('**/*.pptx') 
+	
+}
+
+repositories {
+
+}
+
+test {
+   exclude '**/*IT*'
+}
+
+test.doFirst {
+  jvmArgs '-XX:-UseSplitVerifier'
+
+}
+
+// If you would like to setup a remote debugger
+//test.doFirst {
+//  jvmArgs '-Xdebug',
+//         '-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005'
+//        
+//}
+
+
+task cleanJars(dependsOn: 'copyJars', type : Delete) {
+	
+	description = "delete unneeded jars from TOMCAT_HOME/lib"
+	
+	ext {
+		tomcatHome = System.getenv()["TOMCAT_HOME"]
+		
+		/* We put files here during the running of this script for developers only */
+		tomcateDestination = "$tomcatHome/lib"
+	}
+	
+	delete "$tomcateDestination/log4j.jar"
+	delete "$tomcateDestination/esapi.jar"
+}
+
+
+eclipse {
+	project {
+		name = "poker-game-engine"
+		comment = "Poker Game Engine"
+	}
+	jdt {
+		sourceCompatibility = 1.7
+		targetCompatibility = 1.7
+	}
+	cleanEclipseClasspath {}
+	classpath {
+		defaultOutputDir = file("build/classes")
+		downloadSources = true
+		containers.clear()
+		containers.add('org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7')
+		containers.add('org.eclipse.jst.j2ee.internal.module.container')
+		file {
+			beforeMerged { classpath ->
+				classpath.entries.removeAll { entry -> entry.kind == 'src' }
+			}
+			whenMerged { classpath ->
+				classpath.entries.findAll { entry -> entry.kind == 'lib' }*.exported = false
+				classpath.entries.findAll { it.kind == 'src' && it.path ==~ 'src/test/.*' }.each { it.output = 'build/test-classes' }
+				classpath.entries.findAll { it.kind == 'src' && it.path ==~ 'src/main/.*' }.each { it.output = 'build/classes' }
+				//classpath.entries.each {entry ->
+				//	entry.path = entry.path.replaceAll(".*\\/filestore/(\\S+)/(\\S+)/(\\S+)/.*/.*/(\\S+)",'repo/$1/$2/$3/jar/$4')
+				//}
+			}
+		}
+	}
+}
+
+dependencies {
+
+
+
+}
